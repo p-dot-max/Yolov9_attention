@@ -1,0 +1,13 @@
+train: C:\Users\Atulaya\Music\ImplementAtt\dataset\train
+test: C:\Users\Atulaya\Music\ImplementAtt\dataset\test
+val:  C:\Users\Atulaya\Music\ImplementAtt\dataset\valid
+
+names: 
+  0: crab
+  1: fish
+  2: jellyfish
+  3: shrimp
+  4: small_fish
+  5: starfish
+
+
