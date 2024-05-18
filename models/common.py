@@ -641,6 +641,33 @@ class ResBlock_CBAM(nn.Module):
         out = self.relu(out)
         return out
 
+# To-Do
+class RESCBAM(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(RESCBAM, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
+        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+        self.conv_after_concat = nn.Conv2d(2, 1, kernel_size=7, stride=1, padding=3)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+        y = self.avg_pool(x)
+        y = self.relu(self.fc1(y))
+        y = self.sigmoid(self.fc2(y))
+
+        channel_att = x * y.expand_as(x)
+
+        max_pool_out, _ = torch.max(channel_att, dim=1, keepdim=True)
+        avg_pool_out = torch.mean(channel_att, dim=1, keepdim=True)
+        spatial_att = torch.cat([max_pool_out, avg_pool_out], dim=1)
+        spatial_att = self.sigmoid(self.conv_after_concat(spatial_att))
+
+        return channel_att * spatial_att.expand_as(channel_att)
+
+
 class SPPELAN(nn.Module):
     # spp-elan
     def __init__(self, c1, c2, c3):  # ch_in, ch_out, number, shortcut, groups, expansion
@@ -1311,3 +1338,5 @@ class Classify(nn.Module):
         if isinstance(x, list):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
+
+
