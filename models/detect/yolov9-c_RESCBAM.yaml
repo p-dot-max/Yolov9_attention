@@ -58,7 +58,6 @@ head:
    [[-1, 7], 1, Concat, [1]],  # cat backbone P4
 
    # elan-2 block
-  #  [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
    [-1, 1, ResBlock_CBAM, [ 1024 ]],
 
    # up-concat merge
