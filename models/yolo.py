@@ -534,6 +534,7 @@ class BaseModel(nn.Module):
             y.append(x if m.i in self.save else None)  # save output
             if visualize:
                 feature_visualization(x, m.type, m.i, save_dir=visualize)
+            # print(f"Layer {m.i} ({m.type}): output shape {x.shape}")
         return x
 
     def _profile_one_layer(self, m, x, dt):
@@ -732,7 +733,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         if m in {
             Conv, AConv, ConvTranspose, 
             Bottleneck, SPP, SPPF, DWConv, BottleneckCSP, nn.ConvTranspose2d, DWConvTranspose2d, SPPCSPC, ADown,
-            RepNCSPELAN4, SPPELAN, RESCBAM, ResBlock_CBAM}:
+            RepNCSPELAN4, SPPELAN, '''RESCBAM''', ResBlock_CBAM}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)

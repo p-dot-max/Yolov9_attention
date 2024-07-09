@@ -493,7 +493,7 @@ class SPPF(nn.Module):
 
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
-    
+
     
 class ReOrg(nn.Module):
     # yolo
@@ -564,7 +564,7 @@ class Silence(nn.Module):
 class ChannelAttention(nn.Module):
     """Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet."""
 
-    def __init__(self, channels: int) -> None:
+    def __init__(self, channels: int):
         super().__init__()
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
@@ -572,7 +572,6 @@ class ChannelAttention(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x * self.act(self.fc(self.pool(x)))
-
 
 class SpatialAttention(nn.Module):
     """Spatial-attention module."""
@@ -588,7 +587,6 @@ class SpatialAttention(nn.Module):
     def forward(self, x):
         """Apply channel and spatial attention on input for feature recalibration."""
         return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
-
 
 class CBAM(nn.Module):
     """Convolutional Block Attention Module."""
@@ -607,7 +605,7 @@ class ResBlock_CBAM(nn.Module):
         super(ResBlock_CBAM, self).__init__()
         self.expansion = expansion
         self.downsampling = downsampling
-
+        
         self.bottleneck = nn.Sequential(
             nn.Conv2d(in_channels=in_places, out_channels=places, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(places),
@@ -619,6 +617,7 @@ class ResBlock_CBAM(nn.Module):
                       bias=False),
             nn.BatchNorm2d(places * self.expansion),
         )
+
         # self.cbam = CBAM(c1=places * self.expansion, c2=places * self.expansion, )
         self.cbam = CBAM(c1=places * self.expansion)
 
@@ -636,36 +635,35 @@ class ResBlock_CBAM(nn.Module):
         out = self.cbam(out)
         if self.downsampling:
             residual = self.downsample(x)
-
         out += residual
         out = self.relu(out)
         return out
 
 # To-Do
-class RESCBAM(nn.Module):
-    def __init__(self, channels, reduction=16):
-        super(RESCBAM, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
-        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
-        self.sigmoid = nn.Sigmoid()
-        self.conv_after_concat = nn.Conv2d(2, 1, kernel_size=7, stride=1, padding=3)
-        self.relu = nn.ReLU(inplace=True)
+# class RESCBAM(nn.Module):
+#     def __init__(self, channels, reduction=16):
+#         super(RESCBAM, self).__init__()
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
+#         self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
+#         self.sigmoid = nn.Sigmoid()
+#         self.conv_after_concat = nn.Conv2d(2, 1, kernel_size=7, stride=1, padding=3)
+#         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
-        b, c, h, w = x.size()
-        y = self.avg_pool(x)
-        y = self.relu(self.fc1(y))
-        y = self.sigmoid(self.fc2(y))
+#     def forward(self, x):
+#         b, c, h, w = x.size()
+#         y = self.avg_pool(x)
+#         y = self.relu(self.fc1(y))
+#         y = self.sigmoid(self.fc2(y))
 
-        channel_att = x * y.expand_as(x)
+#         channel_att = x * y.expand_as(x)
 
-        max_pool_out, _ = torch.max(channel_att, dim=1, keepdim=True)
-        avg_pool_out = torch.mean(channel_att, dim=1, keepdim=True)
-        spatial_att = torch.cat([max_pool_out, avg_pool_out], dim=1)
-        spatial_att = self.sigmoid(self.conv_after_concat(spatial_att))
+#         max_pool_out, _ = torch.max(channel_att, dim=1, keepdim=True)
+#         avg_pool_out = torch.mean(channel_att, dim=1, keepdim=True)
+#         spatial_att = torch.cat([max_pool_out, avg_pool_out], dim=1)
+#         spatial_att = self.sigmoid(self.conv_after_concat(spatial_att))
 
-        return channel_att * spatial_att.expand_as(channel_att)
+#         return channel_att * spatial_att.expand_as(channel_att)
 
 
 class SPPELAN(nn.Module):
@@ -765,7 +763,7 @@ class CBLinear(nn.Module):
     def forward(self, x):
         outs = self.conv(x).split(self.c2s, dim=1)
         return outs
-      
+
 class CBFuse(nn.Module):
     def __init__(self, idx):
         super(CBFuse, self).__init__()
@@ -776,6 +774,83 @@ class CBFuse(nn.Module):
         res = [F.interpolate(x[self.idx[i]], size=target_size, mode='nearest') for i, x in enumerate(xs[:-1])]
         out = torch.sum(torch.stack(res + xs[-1:]), dim=0)
         return out
+    
+# class CBFuse(nn.Module):
+#     def __init__(self, idx):
+#         super(CBFuse, self).__init__()
+#         self.idx = idx
+
+#     def forward(self, xs):
+#         # 1. Find maximum height, width, and channel dimensions among tensors in xs
+#         tensor_shapes = [x.shape for x in xs if isinstance(x, torch.Tensor)]
+#         max_height = max([shape[2] for shape in tensor_shapes]) if tensor_shapes else 0
+#         max_width = max([shape[3] for shape in tensor_shapes]) if tensor_shapes else 0
+#         max_channels = max([shape[1] for shape in tensor_shapes]) if tensor_shapes else 0
+#         target_size = (max_height, max_width)
+
+#         res = []
+#         for i, x in enumerate(xs[:-1]):
+#             # 2. Check if x is a tensor
+#             if isinstance(x, torch.Tensor):
+#                 # 3. Correctly select the desired part of the feature map
+#                 selected_feature = x[self.idx[i]] if isinstance(self.idx[i], (list, tuple)) else x
+
+#                 # 4. Ensure the selected feature has the right spatial dimensions
+#                 if len(selected_feature.shape) == 1:  # if feature is 1-D
+#                     selected_feature = selected_feature.unsqueeze(-1).unsqueeze(-1)  # add spatial dimensions
+#                 elif len(selected_feature.shape) == 2:  # if feature is 2-D
+#                     selected_feature = selected_feature.unsqueeze(-1)  # add spatial dimensions
+
+#                 # 5. Interpolate to the target size
+#                 interpolated_feature = F.interpolate(selected_feature, size=target_size, mode='nearest')
+                
+#                 # 6. Pad to the maximum channel size
+#                 if interpolated_feature.shape[1] < max_channels:
+#                     pad_channels = max_channels - interpolated_feature.shape[1]
+#                     padded_feature = F.pad(interpolated_feature, (0, 0, 0, 0, 0, pad_channels))
+#                 else:
+#                     padded_feature = interpolated_feature
+
+#                 res.append(padded_feature)
+
+#         # 7. Ensure the last tensor in xs has the right size
+#         if isinstance(xs[-1], tuple):
+#             xs[-1] = torch.stack(xs[-1], dim=0)  # convert tuple to tensor
+
+#         # 8. Pad the last tensor to match the maximum channel size
+#         if xs[-1].shape[1] < max_channels:
+#             pad_channels = max_channels - xs[-1].shape[1]
+#             xs[-1] = F.pad(xs[-1], (0, 0, 0, 0, 0, pad_channels))
+
+#         # 9. Sum the results along the channel dimension
+#         out = torch.sum(torch.stack(res + [xs[-1]]), dim=0)
+#         return out
+
+# class CBFuse(nn.Module):
+#     def __init__(self, idx):
+#         super(CBFuse, self).__init__()
+#         self.idx = idx
+
+#     def forward(self, xs):
+#         target_size = xs[-1].shape[2:]
+#         res = []
+        
+#         # Interpolate all inputs to the target size
+#         for i, x in enumerate(xs[:-1]):
+#             if x[self.idx[i]].ndim == 4:
+#                 interpolated = F.interpolate(x[self.idx[i]], size=target_size, mode='nearest')
+#                 res.append(interpolated)
+#             else:
+#                 raise ValueError(f"Tensor at index {i} with shape {x[self.idx[i]].shape} does not have 4 dimensions.")
+        
+#         res.append(xs[-1])  # Append the last tensor without interpolation
+
+#         # Debug print to verify interpolated shapes
+#         print(f'Interpolated shapes: {[r.shape for r in res]}')
+
+#         # Stack and sum the tensors
+#         out = torch.sum(torch.stack(res), dim=0)
+#         return out
 
 #################
 
