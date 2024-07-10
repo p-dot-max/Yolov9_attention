@@ -558,7 +558,6 @@ class Silence(nn.Module):
         return x
 
 
-##### GELAN #####
 
 # Incorporating Attention mechanism
 class ChannelAttention(nn.Module):
@@ -639,32 +638,7 @@ class ResBlock_CBAM(nn.Module):
         out = self.relu(out)
         return out
 
-# To-Do
-# class RESCBAM(nn.Module):
-#     def __init__(self, channels, reduction=16):
-#         super(RESCBAM, self).__init__()
-#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-#         self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
-#         self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
-#         self.sigmoid = nn.Sigmoid()
-#         self.conv_after_concat = nn.Conv2d(2, 1, kernel_size=7, stride=1, padding=3)
-#         self.relu = nn.ReLU(inplace=True)
-
-#     def forward(self, x):
-#         b, c, h, w = x.size()
-#         y = self.avg_pool(x)
-#         y = self.relu(self.fc1(y))
-#         y = self.sigmoid(self.fc2(y))
-
-#         channel_att = x * y.expand_as(x)
-
-#         max_pool_out, _ = torch.max(channel_att, dim=1, keepdim=True)
-#         avg_pool_out = torch.mean(channel_att, dim=1, keepdim=True)
-#         spatial_att = torch.cat([max_pool_out, avg_pool_out], dim=1)
-#         spatial_att = self.sigmoid(self.conv_after_concat(spatial_att))
-
-#         return channel_att * spatial_att.expand_as(channel_att)
-
+##### GELAN #####
 
 class SPPELAN(nn.Module):
     # spp-elan
@@ -701,27 +675,6 @@ class RepNCSPELAN4(nn.Module):
         y = list(self.cv1(x).split((self.c, self.c), 1))
         y.extend(m(y[-1]) for m in [self.cv2, self.cv3])
         return self.cv4(torch.cat(y, 1))
-
-# class RepNCSPELAN4(nn.Module):
-#     # csp-elan
-#     def __init__(self, c1, c2, c3, c4, c5=1):  # ch_in, ch_out, number, shortcut, groups, expansion
-#         super().__init__()
-#         self.c = c3//2
-#         self.cv1 = Conv(c1, c3, 1, 1)
-#         self.cv2 = nn.Sequential(RepNCSP(c3//2, c4, c5), ResBlock_CBAM(c3//2, c4, 1, False, 1) ,Conv(c4, c4, 3, 1))
-#         self.cv3 = nn.Sequential(RepNCSP(c4, c4, c5), Conv(c4, c4, 3, 1))
-#         self.cv4 = Conv(c3+(2*c4), c2, 1, 1)
-
-#     def forward(self, x):
-#         y = list(self.cv1(x).chunk(2, 1))
-#         y.extend((m(y[-1])) for m in [self.cv2, self.cv3])
-#         return self.cv4(torch.cat(y, 1))
-
-#     def forward_split(self, x):
-#         y = list(self.cv1(x).split((self.c, self.c), 1))
-#         y.extend(m(y[-1]) for m in [self.cv2, self.cv3])
-#         return self.cv4(torch.cat(y, 1))
-
 
 #################
 
@@ -774,7 +727,7 @@ class CBFuse(nn.Module):
         res = [F.interpolate(x[self.idx[i]], size=target_size, mode='nearest') for i, x in enumerate(xs[:-1])]
         out = torch.sum(torch.stack(res + xs[-1:]), dim=0)
         return out
-    
+
 # class CBFuse(nn.Module):
 #     def __init__(self, idx):
 #         super(CBFuse, self).__init__()

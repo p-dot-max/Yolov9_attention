@@ -8,47 +8,21 @@ depth_multiple: 1.0  # model depth multiple
 width_multiple: 1.0  # layer channel multiple
 
 #activation: nn.LeakyReLU(0.1)
-#activation: nn.ReLU()
+# activation: nn.ReLU()
 
 # anchors
 anchors: 3
 
 # YOLOv9 backbone
-backbone:
-  [
-   [-1, 1, Silence, []],  
-   
-   # conv down
-   [-1, 1, Conv, [64, 3, 2]],  # 1-P1/2
+backbone: [
+  [-1, 1, Silence, []],
+  # Conv Down
+  [-1, 1, Conv, [64, 3, 2]],
+  [-1, 1, ResBlock_CBAM, [64]],
+  [-1, 1, RepNCSPELAN4, []]
+]
 
-   # conv down
-  #  [-1, 1, Conv, [128, 3, 2]],  # 2-P2/4
-   [-1, 1, ResBlock_CBAM, [128]],
-   
-   # elan-1 block
-   [-1, 1, RepNCSPELAN4, [256, 128, 64, 1]],  # 3
-
-   # avg-conv down
-   [-1, 1, ADown, [256]],  # 4-P3/8
-
-   # elan-2 block
-   [-1, 1, RepNCSPELAN4, [512, 256, 128, 1]],  # 5
-
-   # avg-conv down
-   [-1, 1, ADown, [512]],  # 6-P4/16
-
-   # elan-2 block
-   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 7
-
-   # avg-conv down
-   [-1, 1, ADown, [512]],  # 8-P5/32
-
-   # elan-2 block
-   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 9
-  ]
-
-# RESCBAM
-# YOLOv9 head
+# YOLOv9 head Original
 head:
   [
    # elan-spp block
@@ -60,7 +34,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
-  #  [-1, 1, ResBlock_CBAM, [512]],
 
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
@@ -68,7 +41,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [256, 256, 128, 1]],  # 16 (P3/8-small)
-  #  [-1, 1, ResBlock_CBAM, [256]],
 
    # avg-conv-down merge
    [-1, 1, ADown, [256]],
@@ -76,7 +48,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 19 (P4/16-medium),
-  #  [-1, 1, ResBlock_CBAM, [512]],
 
    # avg-conv-down merge
    [-1, 1, ADown, [512]],
@@ -84,7 +55,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 22 (P5/32-large)
-  #  [-1, 1, ResBlock_CBAM, [512]],
    
    # multi-level reversible auxiliary branch
    
@@ -101,7 +71,6 @@ head:
 
    # elan-1 block
    [-1, 1, RepNCSPELAN4, [256, 128, 64, 1]],  # 28
-  #  [-1, 1, ResBlock_CBAM, [256]],
 
    # avg-conv down fuse
    [-1, 1, ADown, [256]],  # 29-P3/8
@@ -109,7 +78,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [512, 256, 128, 1]],  # 31
-  #  [-1, 1, ResBlock_CBAM, [512]],
 
    # avg-conv down fuse
    [-1, 1, ADown, [512]],  # 32-P4/16
@@ -117,7 +85,6 @@ head:
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 34
-  #  [-1, 1, ResBlock_CBAM, [512]],
 
    # avg-conv down fuse
    [-1, 1, ADown, [512]],  # 35-P5/32
