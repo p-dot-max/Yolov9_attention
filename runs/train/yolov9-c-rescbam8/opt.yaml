@@ -1,6 +1,6 @@
 weights: ''''''
-cfg: C:\Users\Atulaya\Music\yolov9_attention\yolov9\models\detect\yolov9ResCBAM.yaml
-data: C:\Users\Atulaya\Music\yolov9_attention\yolov9\data.yaml
+cfg: C:\Users\atuly\Documents\Yolov9_exp\Yolov9_attention\models\detect\yolov9AMod-c.yaml
+data: C:\Users\atuly\Documents\Yolov9_exp\Yolov9_attention\data.yaml
 hyp:
   lr0: 0.01
   lrf: 0.01
@@ -31,7 +31,7 @@ hyp:
   mosaic: 1.0
   mixup: 0.15
   copy_paste: 0.3
-epochs: 51
+epochs: 2
 batch_size: 32
 imgsz: 640
 rect: false

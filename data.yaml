@@ -1,6 +1,6 @@
-train: C:\Users\Atulaya\Music\ImplementAtt\dataset\train
-test: C:\Users\Atulaya\Music\ImplementAtt\dataset\test
-val:  C:\Users\Atulaya\Music\ImplementAtt\dataset\valid
+train: C:\Users\atuly\Downloads\Compressed\Brackish Underwater.v2-960x540.yolov9\train
+test: C:\Users\atuly\Downloads\Compressed\Brackish Underwater.v2-960x540.yolov9\test
+val:  C:\Users\atuly\Downloads\Compressed\Brackish Underwater.v2-960x540.yolov9\valid
 
 names: 
   0: crab
