@@ -79,7 +79,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     data_dict = None
     if RANK in {-1, 0}:
         loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
-
         # Register actions
         for k in methods(loggers):
             callbacks.register_action(k, callback=getattr(loggers, k))

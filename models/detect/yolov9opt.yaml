@@ -4,8 +4,11 @@
 
 nc: 6  # number of classes
 
-depth_multiple: 1.0  # model depth multiple
-width_multiple: 1.0  # layer channel multiple
+# depth_multiple: 1.0  # model depth multiple
+# width_multiple: 1.0  # layer channel multiple
+
+depth_multiple: 0.75
+width_multiple: 0.75
 
 # activation: nn.LeakyReLU(0.1)
 activation: nn.ReLU()
