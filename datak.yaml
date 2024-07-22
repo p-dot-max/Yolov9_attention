@@ -1,0 +1,13 @@
+train: /kaggle/working/Brackish-Underwater-2/train
+test: /kaggle/working/Brackish-Underwater-2/test
+val:  /kaggle/working/Brackish-Underwater-2/valid
+
+names: 
+  0: crab
+  1: fish
+  2: jellyfish
+  3: shrimp
+  4: small_fish
+  5: starfish
+
+

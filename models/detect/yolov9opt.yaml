@@ -31,6 +31,7 @@ backbone:
    [-1, 1, ResBlock_CBAM, [512]],
   ]
 
+
 # YOLOv9 head
 head:
   [
@@ -42,8 +43,9 @@ head:
    [[-1, 7], 1, Concat, [1]],  # cat backbone P4
 
    # elan-2 block
-   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
-
+  #  [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
+   [-1, 1, ResBlock_CBAM, [512]]
+  
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
    [[-1, 5], 1, Concat, [1]],  # cat backbone P3

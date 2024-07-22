@@ -556,6 +556,7 @@ class Silence(nn.Module):
         super(Silence, self).__init__()
     def forward(self, x):    
         return x
+
 class ChannelAttention(nn.Module):
     def __init__(self, channels: int, activation=nn.LeakyReLU(0.1, inplace=True)):
         super().__init__()
