@@ -559,94 +559,94 @@ class Silence(nn.Module):
 
  
 #----------------------------------
-# class ChannelAttention(nn.Module):
-#     def __init__(self, channels: int, activation=nn.LeakyReLU(0.1, inplace=True)):
-#         super().__init__()
-#         self.pool = nn.AdaptiveAvgPool2d(1)
-#         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
-#         self.act = activation
+class ChannelAttention(nn.Module):
+    def __init__(self, channels: int, activation=nn.LeakyReLU(0.1, inplace=True)):
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
+        self.act = activation
 
-#     def forward(self, x: torch.Tensor) -> torch.Tensor:
-#         pool_out = self.pool(x)
-#         fc_out = self.fc(pool_out)
-#         act_out = self.act(fc_out)
-#         return x * act_out
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        pool_out = self.pool(x)
+        fc_out = self.fc(pool_out)
+        act_out = self.act(fc_out)
+        return x * act_out
 
-# class SpatialAttention(nn.Module):
-#     def __init__(self, kernel_size=7, activation=nn.LeakyReLU(0.1, inplace=True)):
-#         super().__init__()
-#         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
-#         padding = 3 if kernel_size == 7 else 1
-#         self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-#         self.act = activation
+class SpatialAttention(nn.Module):
+    def __init__(self, kernel_size=7, activation=nn.LeakyReLU(0.1, inplace=True)):
+        super().__init__()
+        assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
+        padding = 3 if kernel_size == 7 else 1
+        self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+        self.act = activation
 
-#     def forward(self, x):
-#         mean_out = torch.mean(x, 1, keepdim=True)
-#         max_out = torch.max(x, 1, keepdim=True)[0]
-#         concat_out = torch.cat([mean_out, max_out], 1)
-#         cv1_out = self.cv1(concat_out)
-#         act_out = self.act(cv1_out)
-#         return x * act_out
+    def forward(self, x):
+        mean_out = torch.mean(x, 1, keepdim=True)
+        max_out = torch.max(x, 1, keepdim=True)[0]
+        concat_out = torch.cat([mean_out, max_out], 1)
+        cv1_out = self.cv1(concat_out)
+        act_out = self.act(cv1_out)
+        return x * act_out
 
-# class CBAM(nn.Module):
-#     def __init__(self, c1, kernel_size=7, activation=nn.LeakyReLU(0.1, inplace=True)):
-#         super().__init__()
-#         self.channel_attention = ChannelAttention(c1, activation)
-#         self.spatial_attention = SpatialAttention(kernel_size, activation)
+class CBAM(nn.Module):
+    def __init__(self, c1, kernel_size=7, activation=nn.LeakyReLU(0.1, inplace=True)):
+        super().__init__()
+        self.channel_attention = ChannelAttention(c1, activation)
+        self.spatial_attention = SpatialAttention(kernel_size, activation)
 
-#     def forward(self, x):
-#         ca_out = self.channel_attention(x)
-#         sa_out = self.spatial_attention(ca_out)
-#         return sa_out
+    def forward(self, x):
+        ca_out = self.channel_attention(x)
+        sa_out = self.spatial_attention(ca_out)
+        return sa_out
 
-# # class ResBlock_CBAM(nn.Module):
-# #     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
-# #         super(ResBlock_CBAM, self).__init__()
+class ResBlock_CBAM(nn.Module):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
+        super(ResBlock_CBAM, self).__init__()
         
-# #         activation = nn.LeakyReLU(0.1, inplace=True)
+        activation = nn.LeakyReLU(0.1, inplace=True)
         
-# #         self.conv1 = nn.Conv2d(c1, c2, kernel_size=1, stride=1, bias=False)
-# #         self.bn1 = nn.BatchNorm2d(c2)
-# #         self.conv2 = nn.Conv2d(c2, c2, kernel_size=3, stride=s, padding=1, bias=False)
-# #         self.bn2 = nn.BatchNorm2d(c2)
-# #         self.conv3 = nn.Conv2d(c2, c2, kernel_size=1, stride=1, bias=False)
-# #         self.bn3 = nn.BatchNorm2d(c2)
+        self.conv1 = nn.Conv2d(c1, c2, kernel_size=1, stride=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c2)
+        self.conv2 = nn.Conv2d(c2, c2, kernel_size=3, stride=s, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(c2)
+        self.conv3 = nn.Conv2d(c2, c2, kernel_size=1, stride=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(c2)
         
-# #         self.cbam = CBAM(c1=c2, activation=activation)
+        self.cbam = CBAM(c1=c2, activation=activation)
         
-# #         if s != 1 or c1 != c2:
-# #             self.downsample = nn.Sequential(
-# #                 nn.Conv2d(c1, c2, kernel_size=1, stride=s, bias=False),
-# #                 nn.BatchNorm2d(c2)
-# #             )
-# #         else:
-# #             self.downsample = None
+        if s != 1 or c1 != c2:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(c1, c2, kernel_size=1, stride=s, bias=False),
+                nn.BatchNorm2d(c2)
+            )
+        else:
+            self.downsample = None
         
-# #         self.activation = activation
+        self.activation = activation
 
-# #     def forward(self, x):
-# #         residual = x
+    def forward(self, x):
+        residual = x
         
-# #         out = self.conv1(x)
-# #         out = self.bn1(out)
-# #         out = self.activation(out)
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.activation(out)
         
-# #         out = self.conv2(out)
-# #         out = self.bn2(out)
-# #         out = self.activation(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.activation(out)
         
-# #         out = self.conv3(out)
-# #         out = self.bn3(out)
+        out = self.conv3(out)
+        out = self.bn3(out)
         
-# #         out = self.cbam(out)
+        out = self.cbam(out)
         
-# #         if self.downsample is not None:
-# #             residual = self.downsample(x)
+        if self.downsample is not None:
+            residual = self.downsample(x)
         
-# #         out += residual
-# #         out = self.activation(out)
+        out += residual
+        out = self.activation(out)
         
-# #         return out
+        return out
 
 
 # # Attention------------20MIB 
@@ -720,121 +720,121 @@ class Silence(nn.Module):
 #------------------------------------------
 
 # # Incorporating Attention mechanism
-class ChannelAttention(nn.Module):
-    """Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet."""
+# class ChannelAttention(nn.Module):
+#     """Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet."""
 
-    def __init__(self, channels: int):
-        super().__init__()
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
-        self.act = nn.Sigmoid()
+#     def __init__(self, channels: int):
+#         super().__init__()
+#         self.pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
+#         self.act = nn.Sigmoid()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * self.act(self.fc(self.pool(x)))
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         return x * self.act(self.fc(self.pool(x)))
 
-class SpatialAttention(nn.Module):
-    """Spatial-attention module."""
+# class SpatialAttention(nn.Module):
+#     """Spatial-attention module."""
 
-    def __init__(self, kernel_size=7):
-        """Initialize Spatial-attention module with kernel size argument."""
-        super().__init__()
-        assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
-        padding = 3 if kernel_size == 7 else 1
-        self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        self.act = nn.Sigmoid()
+#     def __init__(self, kernel_size=7):
+#         """Initialize Spatial-attention module with kernel size argument."""
+#         super().__init__()
+#         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
+#         padding = 3 if kernel_size == 7 else 1
+#         self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+#         self.act = nn.Sigmoid()
 
-    def forward(self, x):
-        """Apply channel and spatial attention on input for feature recalibration."""
-        return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
+#     def forward(self, x):
+#         """Apply channel and spatial attention on input for feature recalibration."""
+#         return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
 
-class CBAM(nn.Module):
-    """Convolutional Block Attention Module."""
+# class CBAM(nn.Module):
+#     """Convolutional Block Attention Module."""
 
-    def __init__(self, c1, kernel_size=7):  # ch_in, kernels
-        super().__init__()
-        self.channel_attention = ChannelAttention(c1)
-        self.spatial_attention = SpatialAttention(kernel_size)
+#     def __init__(self, c1, kernel_size=7):  # ch_in, kernels
+#         super().__init__()
+#         self.channel_attention = ChannelAttention(c1)
+#         self.spatial_attention = SpatialAttention(kernel_size)
 
-    def forward(self, x):
-        """Applies the forward pass through C1 module."""
-        return self.spatial_attention(self.channel_attention(x))
+#     def forward(self, x):
+#         """Applies the forward pass through C1 module."""
+#         return self.spatial_attention(self.channel_attention(x))
 
-class ResBlock_CBAM(nn.Module):
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, expansion=1, downsampling=False):
-        super(ResBlock_CBAM, self).__init__()
-        self.expansion = expansion
-        self.downsampling = downsampling
+# class ResBlock_CBAM(nn.Module):
+#     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, expansion=1, downsampling=False):
+#         super(ResBlock_CBAM, self).__init__()
+#         self.expansion = expansion
+#         self.downsampling = downsampling
         
-        # Adjusted the bottleneck to match the Conv class parameters here!
-        self.bottleneck = nn.Sequential(
-            nn.Conv2d(in_channels=c1, out_channels=c2, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(c2),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=c2, out_channels=c2, kernel_size=3, stride=s, padding=1, bias=False),
-            nn.BatchNorm2d(c2),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=c2, out_channels=c2 * self.expansion, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(c2 * self.expansion),
-        )
+#         # Adjusted the bottleneck to match the Conv class parameters here!
+#         self.bottleneck = nn.Sequential(
+#             nn.Conv2d(in_channels=c1, out_channels=c2, kernel_size=1, stride=1, bias=False),
+#             nn.BatchNorm2d(c2),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=c2, out_channels=c2, kernel_size=3, stride=s, padding=1, bias=False),
+#             nn.BatchNorm2d(c2),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=c2, out_channels=c2 * self.expansion, kernel_size=1, stride=1, bias=False),
+#             nn.BatchNorm2d(c2 * self.expansion),
+#         )
         
-        self.cbam = CBAM(c1=c2 * self.expansion)
+#         self.cbam = CBAM(c1=c2 * self.expansion)
 
-        if self.downsampling:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(in_channels=c1, out_channels=c2 * self.expansion, kernel_size=1, stride=s, bias=False),
-                nn.BatchNorm2d(c2 * self.expansion)
-            )
-        self.relu = nn.ReLU(inplace=True)
+#         if self.downsampling:
+#             self.downsample = nn.Sequential(
+#                 nn.Conv2d(in_channels=c1, out_channels=c2 * self.expansion, kernel_size=1, stride=s, bias=False),
+#                 nn.BatchNorm2d(c2 * self.expansion)
+#             )
+#         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
-        residual = x
-        out = self.bottleneck(x)
-        out = self.cbam(out)
-        if self.downsampling:
-            residual = self.downsample(x)
-        out += residual
-        out = self.relu(out)
-        return out
+#     def forward(self, x):
+#         residual = x
+#         out = self.bottleneck(x)
+#         out = self.cbam(out)
+#         if self.downsampling:
+#             residual = self.downsample(x)
+#         out += residual
+#         out = self.relu(out)
+#         return out
 
 
-class ResBlock_CBAM(nn.Module):
-    def __init__(self, in_places, places, stride=1, downsampling=False, expansion=1):
-        super(ResBlock_CBAM, self).__init__()
-        self.expansion = expansion
-        self.downsampling = downsampling
+# class ResBlock_CBAM(nn.Module):
+#     def __init__(self, in_places, places, stride=1, downsampling=False, expansion=1):
+#         super(ResBlock_CBAM, self).__init__()
+#         self.expansion = expansion
+#         self.downsampling = downsampling
         
-        self.bottleneck = nn.Sequential(
-            nn.Conv2d(in_channels=in_places, out_channels=places, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(places),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=places, out_channels=places, kernel_size=3, stride=stride, padding=1, bias=False),
-            nn.BatchNorm2d(places),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=places, out_channels=places * self.expansion, kernel_size=1, stride=1,
-                      bias=False),
-            nn.BatchNorm2d(places * self.expansion),
-        )
+#         self.bottleneck = nn.Sequential(
+#             nn.Conv2d(in_channels=in_places, out_channels=places, kernel_size=1, stride=1, bias=False),
+#             nn.BatchNorm2d(places),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=places, out_channels=places, kernel_size=3, stride=stride, padding=1, bias=False),
+#             nn.BatchNorm2d(places),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=places, out_channels=places * self.expansion, kernel_size=1, stride=1,
+#                       bias=False),
+#             nn.BatchNorm2d(places * self.expansion),
+#         )
 
-        # self.cbam = CBAM(c1=places * self.expansion, c2=places * self.expansion, )
-        self.cbam = CBAM(c1=places * self.expansion)
+#         # self.cbam = CBAM(c1=places * self.expansion, c2=places * self.expansion, )
+#         self.cbam = CBAM(c1=places * self.expansion)
 
-        if self.downsampling:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(in_channels=in_places, out_channels=places * self.expansion, kernel_size=1, stride=stride,
-                          bias=False),
-                nn.BatchNorm2d(places * self.expansion)
-            )
-        self.relu = nn.ReLU(inplace=True)
+#         if self.downsampling:
+#             self.downsample = nn.Sequential(
+#                 nn.Conv2d(in_channels=in_places, out_channels=places * self.expansion, kernel_size=1, stride=stride,
+#                           bias=False),
+#                 nn.BatchNorm2d(places * self.expansion)
+#             )
+#         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
-        residual = x
-        out = self.bottleneck(x)
-        out = self.cbam(out)
-        if self.downsampling:
-            residual = self.downsample(x)
-        out += residual
-        out = self.relu(out)
-        return out
+#     def forward(self, x):
+#         residual = x
+#         out = self.bottleneck(x)
+#         out = self.cbam(out)
+#         if self.downsampling:
+#             residual = self.downsample(x)
+#         out += residual
+#         out = self.relu(out)
+#         return out
 
 ##### GELAN #####
 
