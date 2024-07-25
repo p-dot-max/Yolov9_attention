@@ -1,3 +1,11 @@
+import torch.nn as nn
+import torch 
+from torch.cuda.amp import GradScaler, autocast
+
+scaler = GradScaler()
+
+num_epochs = 10
+
 class ChannelAttention(nn.Module):
     def __init__(self, channels: int, activation=nn.LeakyReLU(0.1, inplace=True)):
         super().__init__()
@@ -75,13 +83,6 @@ class ResBlock_CBAM(nn.Module):
         out += residual
         out = self.relu(out)
         return out
-
-# Training loop with memory monitoring
-import torch
-from torch.cuda.amp import GradScaler, autocast
-
-# Initialize scaler for mixed precision training
-scaler = GradScaler()
 
 for epoch in range(num_epochs):
     for data, target in dataloader:

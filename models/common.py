@@ -557,6 +557,8 @@ class Silence(nn.Module):
     def forward(self, x):    
         return x
 
+ 
+#----------------------------------
 class ChannelAttention(nn.Module):
     def __init__(self, channels: int, activation=nn.LeakyReLU(0.1, inplace=True)):
         super().__init__()
@@ -598,41 +600,52 @@ class CBAM(nn.Module):
         return sa_out
 
 class ResBlock_CBAM(nn.Module):
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, expansion=1, downsampling=False):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         super(ResBlock_CBAM, self).__init__()
-        self.expansion = expansion
-        self.downsampling = downsampling
-
-        activation = nn.LeakyReLU(0.1, inplace=True)  # Activation function used in YOLOv9
         
-        self.bottleneck = nn.Sequential(
-            nn.Conv2d(in_channels=c1, out_channels=c2, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(c2),
-            activation,
-            nn.Conv2d(in_channels=c2, out_channels=c2, kernel_size=3, stride=s, padding=1, bias=False),
-            nn.BatchNorm2d(c2),
-            activation,
-            nn.Conv2d(in_channels=c2, out_channels=c2 * self.expansion, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(c2 * self.expansion),
-        )
+        activation = nn.LeakyReLU(0.1, inplace=True)
         
-        self.cbam = CBAM(c1=c2 * self.expansion, activation=activation)
-
-        if self.downsampling:
+        self.conv1 = nn.Conv2d(c1, c2, kernel_size=1, stride=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c2)
+        self.conv2 = nn.Conv2d(c2, c2, kernel_size=3, stride=s, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(c2)
+        self.conv3 = nn.Conv2d(c2, c2, kernel_size=1, stride=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(c2)
+        
+        self.cbam = CBAM(c1=c2, activation=activation)
+        
+        if s != 1 or c1 != c2:
             self.downsample = nn.Sequential(
-                nn.Conv2d(in_channels=c1, out_channels=c2 * self.expansion, kernel_size=1, stride=s, bias=False),
-                nn.BatchNorm2d(c2 * self.expansion)
+                nn.Conv2d(c1, c2, kernel_size=1, stride=s, bias=False),
+                nn.BatchNorm2d(c2)
             )
-        self.relu = nn.ReLU(inplace=True)
+        else:
+            self.downsample = None
+        
+        self.activation = activation
 
     def forward(self, x):
         residual = x
-        out = self.bottleneck(x)
+        
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.activation(out)
+        
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.activation(out)
+        
+        out = self.conv3(out)
+        out = self.bn3(out)
+        
         out = self.cbam(out)
-        if self.downsampling:
+        
+        if self.downsample is not None:
             residual = self.downsample(x)
+        
         out += residual
-        out = self.relu(out)
+        out = self.activation(out)
+        
         return out
 
 
