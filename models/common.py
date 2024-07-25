@@ -796,7 +796,7 @@ class ResBlock_CBAM(nn.Module):
 #         out = self.relu(out)
 #         return out
 
-
+#---------------------
 # class ResBlock_CBAM(nn.Module):
 #     def __init__(self, in_places, places, stride=1, downsampling=False, expansion=1):
 #         super(ResBlock_CBAM, self).__init__()
