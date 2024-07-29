@@ -53,7 +53,7 @@ head:
 
    # elan-2 block
   #  [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
-   [-1, 1, ResBlock_CBAM, [512]],
+   [-1, 1, ResBlock_CBAM, [1024]],
   
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],

@@ -649,43 +649,269 @@ class Silence(nn.Module):
 #         return out
 
 # # Incorporating Attention mechanism
-class ChannelAttention(nn.Module):
-    """Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet."""
+# class ChannelAttention(nn.Module):
+#     """Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet."""
 
+#     def __init__(self, channels: int):
+#         super().__init__()
+#         self.pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
+#         self.act = nn.Sigmoid()
+
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         return x * self.act(self.fc(self.pool(x)))
+
+# class SpatialAttention(nn.Module):
+#     """Spatial-attention module."""
+
+#     def __init__(self, kernel_size=7):
+#         """Initialize Spatial-attention module with kernel size argument."""
+#         super().__init__()
+#         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
+#         padding = 3 if kernel_size == 7 else 1
+#         self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+#         self.act = nn.Sigmoid()
+
+#     def forward(self, x):
+#         """Apply channel and spatial attention on input for feature recalibration."""
+#         return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
+
+# class CBAM(nn.Module):
+#     """Convolutional Block Attention Module."""
+
+#     def __init__(self, c1, kernel_size=7):  # ch_in, kernels
+#         super().__init__()
+#         self.channel_attention = ChannelAttention(c1)
+#         self.spatial_attention = SpatialAttention(kernel_size)
+
+#     def forward(self, x):
+#         """Applies the forward pass through C1 module."""
+#         return self.spatial_attention(self.channel_attention(x))
+
+# class ResBlock_CBAM(nn.Module):
+#     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, expansion=1, downsampling=False):
+#         super(ResBlock_CBAM, self).__init__()
+#         self.expansion = expansion
+#         self.downsampling = downsampling
+        
+#         # Adjusted the bottleneck to match the Conv class parameters here!
+#         self.bottleneck = nn.Sequential(
+#             nn.Conv2d(in_channels=c1, out_channels=c2, kernel_size=1, stride=1, bias=False),
+#             nn.BatchNorm2d(c2),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=c2, out_channels=c2, kernel_size=3, stride=s, padding=1, bias=False),
+#             nn.BatchNorm2d(c2),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(in_channels=c2, out_channels=c2 * self.expansion, kernel_size=1, stride=1, bias=False),
+#             nn.BatchNorm2d(c2 * self.expansion),
+#         )
+        
+#         self.cbam = CBAM(c1=c2 * self.expansion)
+
+#         if self.downsampling:
+#             self.downsample = nn.Sequential(
+#                 nn.Conv2d(in_channels=c1, out_channels=c2 * self.expansion, kernel_size=1, stride=s, bias=False),
+#                 nn.BatchNorm2d(c2 * self.expansion)
+#             )
+#         self.relu = nn.ReLU(inplace=True)
+
+#     def forward(self, x):
+#         residual = x
+#         out = self.bottleneck(x)
+#         out = self.cbam(out)
+#         if self.downsampling:
+#             residual = self.downsample(x)
+#         out += residual
+#         out = self.relu(out)
+#         return out
+
+
+## Using new methods-1
+# class SpatialAttention(nn.Module):
+#     """Spatial-attention module."""
+
+#     def __init__(self, kernel_size=7):
+#         """Initialize Spatial-attention module with kernel size argument."""
+#         super().__init__()
+#         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
+#         padding = 3 if kernel_size == 7 else 1
+#         self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+#         self.act = nn.Sigmoid()
+
+#     def forward(self, x):
+#         """Apply channel and spatial attention on input for feature recalibration."""
+#         return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
+
+# class DepthwiseSeparableConv(nn.Module):
+#     """
+#     Depthwise separable convolution.
+#     """
+#     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
+#         super(DepthwiseSeparableConv, self).__init__()
+#         self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_channels, bias=bias)
+#         self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=bias)
+   
+#     def forward(self, x):
+#         x = self.depthwise(x)
+#         x = self.pointwise(x)
+#         return x
+
+# class ResBlock_CBAM(nn.Module):
+#     """
+#     Residual Block with Convolutional Block Attention Module (CBAM) using Depthwise Separable Convolutions.
+#     """
+
+#     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, groups=1, dilation=1,
+#                  activation=True, expansion_factor=1, downsample=False):
+#         super(ResBlock_CBAM, self).__init__()
+#         self.expansion_factor = expansion_factor
+#         self.downsample = downsample
+
+#         # Define the bottleneck sequence with depthwise separable convolutions
+#         self.bottleneck = nn.Sequential(
+#             DepthwiseSeparableConv(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0, bias=False),
+#             nn.BatchNorm2d(out_channels),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             DepthwiseSeparableConv(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+#             nn.BatchNorm2d(out_channels),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             DepthwiseSeparableConv(in_channels=out_channels, out_channels=out_channels * self.expansion_factor, kernel_size=1, stride=1, padding=0, bias=False),
+#             nn.BatchNorm2d(out_channels * self.expansion_factor),
+#         )
+
+#         # Define the CBAM module
+#         self.cbam = CBAM(in_channels=out_channels * self.expansion_factor)
+
+#         # Define the downsampling layer if needed
+#         if self.downsample:
+#             self.downsample_layer = nn.Sequential(
+#                 DepthwiseSeparableConv(in_channels=in_channels, out_channels=out_channels * self.expansion_factor, kernel_size=1, stride=stride, padding=0, bias=False),
+#                 nn.BatchNorm2d(out_channels * self.expansion_factor)
+#             )
+
+#         # Activation layer
+#         self.activation_layer = nn.ReLU(inplace=True)
+
+#     def forward(self, input_tensor):
+#         """
+#         Forward pass of the Residual Block with CBAM.
+#         :param input_tensor: Input tensor of shape (batch_size, channels, height, width)
+#         :return: Output tensor with CBAM applied
+#         """
+#         # Save the residual connection
+#         residual_tensor = input_tensor
+
+#         # Apply bottleneck layers
+#         bottleneck_output = self.bottleneck(input_tensor)
+
+#         # Apply CBAM
+#         cbam_output = self.cbam(bottleneck_output)
+
+#         # Downsample if necessary
+#         if self.downsample:
+#             residual_tensor = self.downsample_layer(input_tensor)
+
+#         # Add residual connection
+#         output_tensor = cbam_output + residual_tensor
+
+#         # Apply activation
+#         output_tensor = self.activation_layer(output_tensor)
+
+#         return output_tensor
+
+# class CBAM(nn.Module):
+#     """
+#     Convolutional Block Attention Module (CBAM).
+#     """
+
+#     def __init__(self, in_channels):
+#         super(CBAM, self).__init__()
+#         self.channel_attention = ChannelAttention(in_channels)
+#         # Add spatial attention if required
+#         self.spatial_attention = SpatialAttention()
+
+#     def forward(self, x):
+#         x = self.channel_attention(x)
+#         # x = self.spatial_attention(x)
+#         return x
+
+# class ChannelAttention(nn.Module):
+#     """
+#     Channel-attention module.
+#     """
+
+#     def __init__(self, in_channels: int):
+#         super(ChannelAttention, self).__init__()
+#         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0, bias=True)
+#         self.activation = nn.Sigmoid()
+
+#     def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
+#         """
+#         Forward pass of the channel attention module.
+#         :param input_tensor: Input feature map of shape (batch_size, channels, height, width)
+#         :return: Feature map with channel attention applied
+#         """
+#         pooled_tensor = self.global_avg_pool(input_tensor)
+#         attention_scores = self.activation(self.fc(pooled_tensor))
+#         return input_tensor * attention_scores
+
+
+#Method 2
+class DepthwiseSeparableConv(nn.Module):
+    """
+    Depthwise separable convolution layer.
+    """
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=False):
+        super(DepthwiseSeparableConv, self).__init__()
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_channels, bias=bias)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=bias)
+   
+    def forward(self, x):
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        return x
+
+class ChannelAttention(nn.Module):
+    """
+    Channel-attention module.
+    """
     def __init__(self, channels: int):
-        super().__init__()
+        super(ChannelAttention, self).__init__()
         self.pool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
+        self.fc = DepthwiseSeparableConv(channels, channels, kernel_size=1, stride=1, padding=0, bias=True)
         self.act = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * self.act(self.fc(self.pool(x)))
+        pooled = self.pool(x)
+        return x * self.act(self.fc(pooled))
 
 class SpatialAttention(nn.Module):
-    """Spatial-attention module."""
-
+    """
+    Spatial-attention module.
+    """
     def __init__(self, kernel_size=7):
-        """Initialize Spatial-attention module with kernel size argument."""
-        super().__init__()
+        super(SpatialAttention, self).__init__()
         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
         padding = 3 if kernel_size == 7 else 1
-        self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+        self.conv = DepthwiseSeparableConv(2, 1, kernel_size, padding=padding, bias=False)
         self.act = nn.Sigmoid()
 
     def forward(self, x):
-        """Apply channel and spatial attention on input for feature recalibration."""
-        return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out = torch.max(x, dim=1, keepdim=True)[0]
+        return x * self.act(self.conv(torch.cat([avg_out, max_out], dim=1)))
 
 class CBAM(nn.Module):
-    """Convolutional Block Attention Module."""
-
-    def __init__(self, c1, kernel_size=7):  # ch_in, kernels
-        super().__init__()
+    """
+    Convolutional Block Attention Module.
+    """
+    def __init__(self, c1, kernel_size=7):
+        super(CBAM, self).__init__()
         self.channel_attention = ChannelAttention(c1)
         self.spatial_attention = SpatialAttention(kernel_size)
 
     def forward(self, x):
-        """Applies the forward pass through C1 module."""
         return self.spatial_attention(self.channel_attention(x))
 
 class ResBlock_CBAM(nn.Module):
@@ -693,24 +919,23 @@ class ResBlock_CBAM(nn.Module):
         super(ResBlock_CBAM, self).__init__()
         self.expansion = expansion
         self.downsampling = downsampling
-        
-        # Adjusted the bottleneck to match the Conv class parameters here!
+
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(in_channels=c1, out_channels=c2, kernel_size=1, stride=1, bias=False),
+            DepthwiseSeparableConv(c1, c2, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(c2),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=c2, out_channels=c2, kernel_size=3, stride=s, padding=1, bias=False),
+            DepthwiseSeparableConv(c2, c2, kernel_size=3, stride=s, padding=1, bias=False),
             nn.BatchNorm2d(c2),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(in_channels=c2, out_channels=c2 * self.expansion, kernel_size=1, stride=1, bias=False),
+            DepthwiseSeparableConv(c2, c2 * self.expansion, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(c2 * self.expansion),
         )
-        
+       
         self.cbam = CBAM(c1=c2 * self.expansion)
 
         if self.downsampling:
             self.downsample = nn.Sequential(
-                nn.Conv2d(in_channels=c1, out_channels=c2 * self.expansion, kernel_size=1, stride=s, bias=False),
+                DepthwiseSeparableConv(c1, c2 * self.expansion, kernel_size=1, stride=s, padding=0, bias=False),
                 nn.BatchNorm2d(c2 * self.expansion)
             )
         self.relu = nn.ReLU(inplace=True)
